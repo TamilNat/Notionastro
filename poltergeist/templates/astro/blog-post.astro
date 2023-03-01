@@ -1,0 +1,133 @@
+---
+import type { BlogPost } from "../../blog";
+import { Block, getBlockStyleProps, NotionColor } from "../../blocks";
+
+const colorMap: Record<
+  NotionColor,
+  { color: string; backgroundColor: string }
+> = {
+  default: { color: "black", backgroundColor: "inherit" },
+  gray: { color: "gray", backgroundColor: "inherit" },
+  brown: { color: "brown", backgroundColor: "inherit" },
+  orange: { color: "orange", backgroundColor: "inherit" },
+  yellow: { color: "yellow", backgroundColor: "inherit" },
+  green: { color: "green", backgroundColor: "inherit" },
+  blue: { color: "blue", backgroundColor: "inherit" },
+  purple: { color: "purple", backgroundColor: "inherit" },
+  pink: { color: "pink", backgroundColor: "inherit" },
+  red: { color: "red", backgroundColor: "inherit" },
+  gray_background: { color: "white", backgroundColor: "gray" },
+  brown_background: { color: "white", backgroundColor: "brown" },
+  orange_background: { color: "white", backgroundColor: "orange" },
+  yellow_background: { color: "white", backgroundColor: "yellow" },
+  green_background: { color: "white", backgroundColor: "green" },
+  blue_background: { color: "white", backgroundColor: "blue" },
+  purple_background: { color: "white", backgroundColor: "purple" },
+  pink_background: { color: "white", backgroundColor: "pink" },
+  red_background: { color: "white", backgroundColor: "red" },
+};
+
+const matchStylePropsToStyles = (block: Block) => {
+  const styles = getBlockStyleProps(block);
+
+  const styleProps = styles
+    ? {
+        color: colorMap[styles.color].color,
+        backgroundColor: colorMap[styles.color].backgroundColor,
+        fontWeight: styles.bold ? "bold" : "normal",
+        fontStyle: styles.italic ? "italic" : "normal",
+        textDecoration: styles.underline ? "underline" : "none",
+      }
+    : {};
+
+  return styleProps;
+};
+
+type Props = {
+  post: BlogPost;
+};
+
+const { blocks, title } = Astro.props.post;
+---
+
+<article>
+  <h1>{title}</h1>
+  {
+    blocks.map((block) => {
+      const styleProps = matchStylePropsToStyles(block);
+      if (block.type === "paragraph") {
+        return <p style={styleProps}>{block.content}</p>;
+      }
+
+      if (block.type === "heading" && block.level === 1) {
+        return <h1 style={styleProps}>{block.content}</h1>;
+      }
+
+      if (block.type === "heading" && block.level === 2) {
+        return <h2 style={styleProps}>{block.content}</h2>;
+      }
+
+      if (block.type === "heading" && block.level === 3) {
+        return <h3 style={styleProps}>{block.content}</h3>;
+      }
+
+      if (block.type === "unorderedList") {
+        return (
+          <ul>
+            {block.items.map((listItem) => {
+              const listItemStyles = matchStylePropsToStyles(listItem);
+              return <li style={listItemStyles}>{listItem.content}</li>;
+            })}
+          </ul>
+        );
+      }
+
+      if (block.type === "orderedList") {
+        return (
+          <ol>
+            {block.items.map((listItem) => {
+              const listItemStyles = matchStylePropsToStyles(listItem);
+              return <li style={listItemStyles}>{listItem.content}</li>;
+            })}
+          </ol>
+        );
+      }
+
+      if (block.type === "todoList") {
+        return (
+          <ul>
+            {block.items.map((listItem) => {
+              const listItemStyles = matchStylePropsToStyles(listItem);
+              return (
+                <li
+                  style={{
+                    ...listItemStyles,
+                    textDecoration: listItem.checked
+                      ? "line-through"
+                      : "initial",
+                  }}
+                >{`${listItem.content}`}</li>
+              );
+            })}
+          </ul>
+        );
+      }
+
+      // ! bug: breaks when changed to any self closing tag (e.g. <hr />)
+      if (block.type === "divider") {
+        return <div>Divider</div>;
+      }
+
+      if (block.type === "break") {
+        // ! bug: breaks when changed to any self closing tag (e.g. <br />)
+        return <div>Break</div>;
+      }
+
+      if (block.type === "image") {
+        // todo: figure out what is the best way to handle images
+        // * problem: when I get images from Notion, there is no width & height
+        return <img src={block.url} alt={block.caption} />;
+      }
+    })
+  }
+</article>

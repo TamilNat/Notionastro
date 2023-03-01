@@ -1,0 +1,33 @@
+---
+import { Blog } from "../../../poltergeist/blog";
+import BlogPost from "../../../poltergeist/templates/astro/blog-post.astro";
+import type { InferGetStaticPathsResult } from "../../types";
+
+export const getStaticPaths = async () => {
+  const blog = new Blog();
+  const response = await blog.getPostsPaths();
+
+  if (!response.ok) {
+    throw new Error(response.error.message);
+  }
+
+  return response.data;
+};
+
+type InferedGetStaticPaths = InferGetStaticPathsResult<typeof getStaticPaths>;
+type InferedProps = InferedGetStaticPaths["props"];
+
+const { id } = Astro.props as InferedProps;
+const blog = new Blog();
+const response = await blog.getPost(id);
+
+if (!response.ok) {
+  throw new Error("Page not found");
+}
+
+const post = response.data;
+---
+
+<main>
+  <BlogPost post={post} />
+</main>
